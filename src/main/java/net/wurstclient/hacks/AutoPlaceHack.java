@@ -26,12 +26,12 @@ import net.wurstclient.util.InteractionSimulator;
 public final class AutoPlaceHack extends Hack implements UpdateListener
 {
 	private final CheckboxSetting onlyBelowFeet =
-			new CheckboxSetting("Only Below Feet",
-					"Only place blocks when target block is 1 block below your feet.",
-					false);
+		new CheckboxSetting("Only Below Feet",
+			"Only place blocks when target block is 1 block below your feet.",
+			false);
 	private final CheckboxSetting fastPlace =
-			new CheckboxSetting("Always FastPlace",
-					"Builds as if FastPlace was enabled, even if it's not.", true);
+		new CheckboxSetting("Always FastPlace",
+			"Builds as if FastPlace was enabled, even if it's not.", true);
 	
 	public AutoPlaceHack()
 	{
@@ -63,12 +63,12 @@ public final class AutoPlaceHack extends Hack implements UpdateListener
 			return;
 		
 		ClientPlayerEntity player = MC.player;
-		if (player == null)
+		if(player == null)
 			return;
 		
 		// Item in hand is not a block
 		if(!(player.getInventory().getStack(player.getInventory().selectedSlot)
-				.getItem() instanceof BlockItem))
+			.getItem() instanceof BlockItem))
 			return;
 		
 		HitResult hitResult = MC.crosshairTarget;
@@ -77,20 +77,20 @@ public final class AutoPlaceHack extends Hack implements UpdateListener
 		
 		BlockHitResult blockHitResult = (BlockHitResult)hitResult;
 		if(blockHitResult.getSide() == Direction.UP
-				|| blockHitResult.getSide() == Direction.DOWN)
+			|| blockHitResult.getSide() == Direction.DOWN)
 			return;
 		
 		if(!BlockUtils.canBeClicked(blockHitResult.getBlockPos()))
 			return;
 		
 		BlockPos blockToPlacePos =
-				blockHitResult.getBlockPos().offset(blockHitResult.getSide());
+			blockHitResult.getBlockPos().offset(blockHitResult.getSide());
 		if(!BlockUtils.getState(blockToPlacePos).isReplaceable())
 			return;
 		
 		// Option: only below feet
 		if(blockToPlacePos.getY() != BlockPos.ofFloored(MC.player.getPos())
-				.down().getY() && onlyBelowFeet.isChecked())
+			.down().getY() && onlyBelowFeet.isChecked())
 			return;
 		
 		InteractionSimulator.rightClickBlock(blockHitResult);

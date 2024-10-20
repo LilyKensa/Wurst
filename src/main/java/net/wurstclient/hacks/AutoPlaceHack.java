@@ -10,8 +10,6 @@ package net.wurstclient.hacks;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.item.BlockItem;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
@@ -22,17 +20,18 @@ import net.wurstclient.events.UpdateListener;
 import net.wurstclient.hack.Hack;
 import net.wurstclient.settings.CheckboxSetting;
 import net.wurstclient.util.BlockUtils;
+import net.wurstclient.util.InteractionSimulator;
 
 @SearchTags({"bridge", "auto place"})
 public final class AutoPlaceHack extends Hack implements UpdateListener
 {
 	private final CheckboxSetting onlyBelowFeet =
-		new CheckboxSetting("Only Below Feet",
-			"Only place blocks when target block is 1 block below your feet.",
-			false);
+			new CheckboxSetting("Only Below Feet",
+					"Only place blocks when target block is 1 block below your feet.",
+					false);
 	private final CheckboxSetting fastPlace =
-		new CheckboxSetting("Always FastPlace",
-			"Builds as if FastPlace was enabled, even if it's not.", true);
+			new CheckboxSetting("Always FastPlace",
+					"Builds as if FastPlace was enabled, even if it's not.", true);
 	
 	public AutoPlaceHack()
 	{
@@ -64,11 +63,12 @@ public final class AutoPlaceHack extends Hack implements UpdateListener
 			return;
 		
 		ClientPlayerEntity player = MC.player;
-		assert player != null;
+		if (player == null)
+			return;
 		
 		// Item in hand is not a block
 		if(!(player.getInventory().getStack(player.getInventory().selectedSlot)
-			.getItem() instanceof BlockItem))
+				.getItem() instanceof BlockItem))
 			return;
 		
 		HitResult hitResult = MC.crosshairTarget;
@@ -77,29 +77,23 @@ public final class AutoPlaceHack extends Hack implements UpdateListener
 		
 		BlockHitResult blockHitResult = (BlockHitResult)hitResult;
 		if(blockHitResult.getSide() == Direction.UP
-			|| blockHitResult.getSide() == Direction.DOWN)
+				|| blockHitResult.getSide() == Direction.DOWN)
 			return;
 		
 		if(!BlockUtils.canBeClicked(blockHitResult.getBlockPos()))
 			return;
 		
 		BlockPos blockToPlacePos =
-			blockHitResult.getBlockPos().offset(blockHitResult.getSide());
+				blockHitResult.getBlockPos().offset(blockHitResult.getSide());
 		if(!BlockUtils.getState(blockToPlacePos).isReplaceable())
 			return;
 		
 		// Option: only below feet
 		if(blockToPlacePos.getY() != BlockPos.ofFloored(MC.player.getPos())
-			.down().getY() && onlyBelowFeet.isChecked())
+				.down().getY() && onlyBelowFeet.isChecked())
 			return;
 		
-		assert MC.interactionManager != null;
-		MC.interactionManager.interactItem(player, Hand.MAIN_HAND);
-		ActionResult actionResult = MC.interactionManager.interactBlock(player,
-			Hand.MAIN_HAND, blockHitResult);
-		if(actionResult.isAccepted())
-			MC.player.swingHand(Hand.MAIN_HAND);
-		
+		InteractionSimulator.rightClickBlock(blockHitResult);
 		MC.itemUseCooldown = 4;
 	}
 }

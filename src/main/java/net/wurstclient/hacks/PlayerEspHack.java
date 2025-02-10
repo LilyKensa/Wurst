@@ -212,6 +212,8 @@ public final class PlayerEspHack extends Hack implements UpdateListener,
 		Vec3d start = RotationUtils.getClientLookVec(partialTicks)
 			.add(RenderUtils.getCameraPos()).subtract(regionVec);
 		
+		boolean shouldRender = false;
+		
 		for(PlayerEntity e : players)
 		{
 			Vec3d end = EntityUtils.getLerpedBox(e, partialTicks).getCenter()
@@ -221,6 +223,8 @@ public final class PlayerEspHack extends Hack implements UpdateListener,
 			
 			if(showGray.isChecked() || !color.isGray())
 			{
+				shouldRender = true;
+				
 				bufferBuilder.vertex(matrix, (float)start.x, (float)start.y,
 					(float)start.z).color(color.r, color.g, color.b, 0.5F);
 				
@@ -230,7 +234,8 @@ public final class PlayerEspHack extends Hack implements UpdateListener,
 			}
 		}
 		
-		BufferRenderer.drawWithGlobalProgram(bufferBuilder.end());
+		if(shouldRender)
+			BufferRenderer.drawWithGlobalProgram(bufferBuilder.end());
 	}
 	
 	private Rgb processColor(PlayerEntity e)
@@ -245,7 +250,6 @@ public final class PlayerEspHack extends Hack implements UpdateListener,
 				color.r = 0;
 				color.g = 0;
 				color.b = 1;
-				
 			}else
 			{
 				float dist = MC.player.distanceTo(e) / 20F;

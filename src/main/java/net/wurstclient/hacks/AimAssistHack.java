@@ -12,6 +12,10 @@ import java.util.stream.Stream;
 
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.entity.Entity;
+import net.minecraft.item.AxeItem;
+import net.minecraft.item.Item;
+import net.minecraft.item.Items;
+import net.minecraft.item.SwordItem;
 import net.minecraft.util.math.Vec3d;
 import net.wurstclient.Category;
 import net.wurstclient.events.MouseUpdateListener;
@@ -58,6 +62,10 @@ public final class AimAssistHack extends Hack
 		new CheckboxSetting("Aim while blocking",
 			"description.wurst.setting.aimassist.aim_while_blocking", false);
 	
+	private final CheckboxSetting onlyHoldingWeapon = new CheckboxSetting(
+		"Only if holding weapon",
+		"Won't aim if not holding a weapon (Swords, axes & sticks.)", false);
+	
 	private final EntityFilterList entityFilters =
 		new EntityFilterList(FilterPlayersSetting.genericCombat(false),
 			FilterSleepingSetting.genericCombat(false),
@@ -103,6 +111,7 @@ public final class AimAssistHack extends Hack
 		addSetting(ignoreMouseInput);
 		addSetting(checkLOS);
 		addSetting(aimWhileBlocking);
+		addSetting(onlyHoldingWeapon);
 		
 		entityFilters.forEach(this::addSetting);
 	}
@@ -141,6 +150,15 @@ public final class AimAssistHack extends Hack
 		// don't aim when a container/inventory screen is open
 		if(MC.currentScreen instanceof HandledScreen)
 			return;
+		
+		Item itemInHand = MC.player.getInventory().getMainHandStack().getItem();
+		if(onlyHoldingWeapon.isChecked() && !(itemInHand instanceof SwordItem
+			|| itemInHand instanceof AxeItem || itemInHand == Items.STICK
+			|| itemInHand == Items.BLAZE_ROD || itemInHand == Items.BREEZE_ROD))
+		{
+			target = null;
+			return;
+		}
 		
 		if(!aimWhileBlocking.isChecked() && MC.player.isUsingItem())
 			return;
@@ -195,8 +213,8 @@ public final class AimAssistHack extends Hack
 		
 		float curYaw = MC.player.getYaw();
 		float curPitch = MC.player.getPitch();
-		int diffYaw = (int)(nextYaw - curYaw);
-		int diffPitch = (int)(nextPitch - curPitch);
+		float diffYaw = nextYaw - curYaw;
+		float diffPitch = nextPitch - curPitch;
 		
 		// If we are <1 degree off but still missing the hitbox,
 		// slightly exaggerate the difference to fix that.
@@ -208,10 +226,12 @@ public final class AimAssistHack extends Hack
 		}
 		
 		double inputFactor = 1 - ignoreMouseInput.getValue();
-		int mouseInputX = (int)(event.getDefaultDeltaX() * inputFactor);
-		int mouseInputY = (int)(event.getDefaultDeltaY() * inputFactor);
+		double mouseInputX = event.getDefaultDeltaX() * inputFactor;
+		double mouseInputY = event.getDefaultDeltaY() * inputFactor;
 		
-		event.setDeltaX(mouseInputX + diffYaw);
-		event.setDeltaY(mouseInputY + diffPitch);
+		event.setDeltaX(mouseInputX
+			+ diffYaw / MC.options.getMouseSensitivity().getValue());
+		event.setDeltaY(mouseInputY
+			+ diffPitch / MC.options.getMouseSensitivity().getValue());
 	}
 }

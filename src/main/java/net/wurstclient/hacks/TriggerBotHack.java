@@ -10,6 +10,9 @@ package net.wurstclient.hacks;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.Entity;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.registry.Registries;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.EntityHitResult;
 import net.wurstclient.Category;
@@ -18,11 +21,8 @@ import net.wurstclient.events.HandleInputListener;
 import net.wurstclient.events.PreMotionListener;
 import net.wurstclient.hack.Hack;
 import net.wurstclient.mixinterface.IKeyBinding;
-import net.wurstclient.settings.AttackSpeedSliderSetting;
-import net.wurstclient.settings.CheckboxSetting;
-import net.wurstclient.settings.SliderSetting;
+import net.wurstclient.settings.*;
 import net.wurstclient.settings.SliderSetting.ValueDisplay;
-import net.wurstclient.settings.SwingHandSetting;
 import net.wurstclient.settings.SwingHandSetting.SwingHand;
 import net.wurstclient.settings.filterlists.EntityFilterList;
 import net.wurstclient.util.EntityUtils;
@@ -69,6 +69,16 @@ public final class TriggerBotHack extends Hack
 			+ " will not work while this option is enabled.",
 		false);
 	
+	private final ItemListSetting itemBlacklist = new ItemListSetting(
+		"Item Blacklist",
+		"Will not trigger when these item are in your hand, so you will never mis-click when you are in lobby.",
+		"minecraft:compass", "minecraft:clock");
+	
+	private final CheckboxSetting blacklistAsWhitelist = new CheckboxSetting(
+		"Blacklist as Whitelist",
+		"If enable, will only trigger when holding one of the items in the list.",
+		false);
+	
 	private final EntityFilterList entityFilters =
 		EntityFilterList.genericCombat();
 	
@@ -85,6 +95,8 @@ public final class TriggerBotHack extends Hack
 		addSetting(swingHand);
 		addSetting(attackWhileBlocking);
 		addSetting(simulateMouseClick);
+		addSetting(itemBlacklist);
+		addSetting(blacklistAsWhitelist);
 		
 		entityFilters.forEach(this::addSetting);
 	}
@@ -144,6 +156,21 @@ public final class TriggerBotHack extends Hack
 		ClientPlayerEntity player = MC.player;
 		if(!attackWhileBlocking.isChecked() && player.isUsingItem())
 			return;
+		
+		ItemStack stack = MC.player.getInventory().getMainHandStack();
+		
+		if(stack.isEmpty())
+		{
+			if(itemBlacklist.getItemNames().contains("minecraft:air"))
+				return;
+		}else
+		{
+			Item item = stack.getItem();
+			String itemName = Registries.ITEM.getId(item).toString();
+			
+			if(itemBlacklist.getItemNames().contains(itemName))
+				return;
+		}
 		
 		if(MC.crosshairTarget == null
 			|| !(MC.crosshairTarget instanceof EntityHitResult eResult))
